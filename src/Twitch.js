@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useCallback, useRef, createContext} from 'react';
 /** @jsx jsx */
-import { jsx, css } from '@emotion/core'
-
+import { jsx, css } from '@emotion/core';
+import { Provider, inject, observer } from 'mobx-react';
 
 const Twitch = () => {
     const [drink, setDrink] = useState('')
@@ -10,16 +10,21 @@ const Twitch = () => {
     const [searchString, setSearchString] = useState('')
     const inputEl = useRef(null);
     const DisplayDrink = createContext();
-    
-    
-    const btnStyle = css`
-    color: hotpink;
-  `
+
+    const history = [];
 
     useEffect(() => {
         getADrink();
     }, [])
 
+    const drinkButton = css({
+     backgroundColor:'#db1f6a',
+	borderRadius: '28px',
+	border: '1px solid #ffffff',
+	display:'inline-block',
+	color: '#ffffff',
+	padding: '10px 20px'
+})
     
     const getADrink = useCallback(() => {
     fetch('https://www.thecocktaildb.com/api/json/v1/1/random.php').then(
@@ -28,8 +33,20 @@ const Twitch = () => {
        setDrink(result.drinks[0].strDrink);
         setDrinkImg(result.drinks[0].strDrinkThumb)
         setDrinkIngredient(result.drinks[0].strIngredient1)
+        var validDrinkSyntax = {name: result.drinks[0].strDrink, img: result.drinks[0].strDrinkThumb, id: result.drinks[0].idDrink, main: result.drinks[0].strIngredient1}
+        searchHistory(validDrinkSyntax);
+    }).catch((result) => {
+        console.log(result)
+        setDrink('No drink for you')
+        setDrinkImg('https://i.pinimg.com/originals/70/e6/d4/70e6d45d537df0749ab8dafa8db43a27.gif')
     })
 }, [])
+
+    function searchHistory(drink) {
+        console.log(drink)
+        history.push(drink);
+        console.log(history)
+    }
 
     function focusBar() {
         inputEl.current.focus();
@@ -39,11 +56,16 @@ const Twitch = () => {
         console.log('searchString', searchString)
         fetch('https://www.thecocktaildb.com/api/json/v1/1/filter.php?i=' + searchString
         ).then(function (response) {
-            if (!response.ok) {
-                return Promise.reject('some reason');
+            console.log(response)
+            if (response.ok) {
+                var resp = response.json();
+                console.log(resp)
+                return resp;
+               
+            } else {
+                
             }
         
-            return response.json();
         }
        // response => response.json() 
     ).then((result) => {
@@ -53,6 +75,8 @@ const Twitch = () => {
         setDrink(randomisedDrink.strDrink);
         setDrinkImg(randomisedDrink.strDrinkThumb)
         setDrinkIngredient(searchString)
+        var validDrinkSyntax = {name: randomisedDrink.strDrink, img: randomisedDrink.strDrinkThumb, id: randomisedDrink.idDrink, main: drinkIngredient}
+        searchHistory(validDrinkSyntax);
     } 
     )}
 
@@ -86,11 +110,14 @@ const Twitch = () => {
             <Display/>
         </div>
       </DisplayDrink.Provider>
-       <button onClick={getADrink}>Get a new drink</button>
-       <p>Get a drink based on ingredient</p><p>{searchString}</p>
-       <input ref={inputEl} type="text" onChange={e => setSearchString(e.target.value)} value={searchString}/><button onClick={focusBar}>Focus the input</button>
+      <Provider>
+
+      </Provider>
+       <button onClick={getADrink} css={drinkButton}> Get a new drink</button>
+       <p>Get a drink based on ingredient</p>
+       <input ref={inputEl} type="text" onChange={e => setSearchString(e.target.value)} value={searchString}/><button onClick={focusBar} css={drinkButton}>Focus the input</button>
       <br/>
-      <button onClick={getADrinkByIngredient}>Get that drink!</button>
+      <button onClick={getADrinkByIngredient} css={drinkButton}>Get that drink!</button>
    </div>)
 }
 
